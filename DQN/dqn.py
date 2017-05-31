@@ -46,7 +46,7 @@ NUM_REPLAY_MEMORY = 1000000  # Size of replay memory
 BATCH_SIZE = 32  # Mini batch size
 TARGET_UPDATE_INTERVAL = 10000  # The frequency with which the target network is updated
 TRAIN_INTERVAL = 4  # The agent selects 4 actions between successive updates
-NO_OP_STEPS = 30  # Maximum number of "do nothing" actions to be performed by the agent at the start of an episode 
+NO_OP_STEPS = 30  # Maximum number of "do nothing" actions to be performed by the agent at the start of an episode
 Q_EVAL_INTERVAL = 64 # Controls frequency with which average max Q values are evaluated
 
 LEARNING_RATE = 0.00025  # Learning rate used by RMSProp
@@ -61,11 +61,11 @@ SAVE_SUMMARY_PATH = 'summary/'
 class Agent():
     """Implementation of a DQN agent for playing Atari games in OpenAI Gym"""
 
-    def __init__(self, 
-                 env, 
-                 mode='train', 
-                 load_network=False, 
-                 save_path=SAVE_NETWORK_PATH, 
+    def __init__(self,
+                 env,
+                 mode='train',
+                 load_network=False,
+                 save_path=SAVE_NETWORK_PATH,
                  epsilon=INITIAL_EPSILON):
         """Initialize a TF session and Q-net/target net graphs.
 
@@ -93,7 +93,7 @@ class Agent():
 
         self.num_actions = self.env.action_space.n
 
-        print ("Environment {} has {} actions".format(env, self.num_actions))
+        print("Environment {} has {} actions".format(env, self.num_actions))
 
         self.t = 0
 
@@ -135,8 +135,9 @@ class Agent():
         self.saver = tf.train.Saver(q_network_weights, max_to_keep=None)
 
         if load_network:
+            # Load pre-trained network from latest TF checkpoint
             self.load_network()
-        
+
         if self.mode == 'train':
             # Setup summary writing for TensorBoard
             self.summary_placeholders, self.update_ops, self.summary_op = self.setup_summary()
@@ -149,7 +150,7 @@ class Agent():
 
     def build_network(self):
         """Construct the Q-network graph with Keras layers
-        
+
         Returns:
             s: placeholder for feeding state batches.
             q_values: Output tensor for inferring Q-vals.
@@ -174,7 +175,7 @@ class Agent():
 
         Args:
             q_network_weights: List of weights to be trained.
-        
+
         Returns:
             a: placeholder for feeding chosen actions.
             y: placeholder for target values.
@@ -196,9 +197,9 @@ class Agent():
             """Clip the error, the loss is quadratic when the error is in (-1, 1), and linear outside of that region
 
             See https://jaromiru.com/2016/10/21/lets-make-a-dqn-full-dqn/ for explanation of why this is used instead of MSE
-            
+           
             Reference: https://en.wikipedia.org/wiki/Huber_loss
-            
+           
             Borrowed from: https://github.com/openai/baselines/blob/958810ed1e78624c300e327a0c79212f2453cfb7/baselines/common/tf_util.py
             """
             return tf.where(
@@ -256,7 +257,7 @@ class Agent():
             reward: Scalar (unclipped) reward value.
             next_state: State tensor at time t+1.
             terminal: Bool indicating end of episode.
-        """ 
+        """
         self.duration += 1    # Update counter for episode duration
 
         # Clip all positive rewards at 1 and all negative rewards at -1, leaving 0 rewards unchanged
@@ -292,7 +293,7 @@ class Agent():
         # To speed things up, only periodically evaluate Q values
         if self.t % Q_EVAL_INTERVAL == 0:
             self.total_q_max += np.max(self.q_values.eval(feed_dict={self.s: [state]}))
-            self.total_q_max_count += 1        
+            self.total_q_max_count += 1       
 
         if terminal:    # We're done with the episode, write stats and clean up
             # Write summary
@@ -323,7 +324,7 @@ class Agent():
 
             # Reset counters
             self.total_reward = 0
-            self.rewards_clipped =0
+            self.rewards_clipped = 0
             self.total_q_max = 0
             self.total_q_max_count = 0
             self.total_loss = 0
@@ -405,7 +406,7 @@ class Util(object):
 
     @staticmethod
     def preprocess(observation):
-        """Preprocess RGB observation to crop and binarize.""" 
+        """Preprocess RGB observation to crop and binarize."""
         # Convert to grayscale
         observation = cv2.cvtColor(cv2.resize(observation, (84, 110)), cv2.COLOR_BGR2GRAY)
         # Crop out the score panel
@@ -424,14 +425,14 @@ def main():
     args = parser.parse_args()
 
     # Instantiate gym environment
-    env = gym.make(ENV_NAME)    
+    env = gym.make(ENV_NAME)   
 
     if args.mode == 'train':  # Train mode
-        print ("Training new network")
+        print("Training new network")
 
         # Create our agent
         agent = Agent(env, mode='train', load_network=False)
-    
+   
         while True:    # Train forever
             terminal = False
             observation = env.reset()
@@ -458,16 +459,16 @@ def main():
                 agent.update(state, action, reward, next_state, terminal)
 
                 state = next_state
-    
+   
     elif args.mode == 'test':  # Test mode with pretrained network
         if args.record:
             env = gym.wrappers.Monitor(env, ENV_NAME+'-videos', video_callable=lambda episode_id: True, force=True)
 
         # Create our agent
-        print ("Loading pretrained network")
-        agent = Agent(env, 
-                      mode='test', 
-                      load_network=True, 
+        print("Loading pretrained network")
+        agent = Agent(env,
+                      mode='test',
+                      load_network=True,
                       epsilon=args.epsilon)
 
         for _ in range(args.num_episodes):
@@ -479,16 +480,16 @@ def main():
                 observation, _, _, _ = env.step(0)  # No-op
 
             total_reward = 0
-            
+           
             state = Util.preprocess(observation)
             state = np.stack([state]*STATE_LENGTH, axis=2).reshape((84,84,4))
 
             while not terminal:
                 action = agent.get_action(state)
                 observation, reward, terminal, _ = env.step(action)
-                
+               
                 env.render()
-                
+               
                 next_state = Util.preprocess(observation)
 
                 # Pop the oldest frame and append the processed new frame
@@ -498,8 +499,8 @@ def main():
 
                 total_reward += reward
 
-            print ("Total reward for episode:",total_reward)
-            
+            print("Total reward for episode:", total_reward)
+
 
 if __name__ == '__main__':
     main()
